@@ -1,3 +1,4 @@
+
 <script>
 	import { onDestroy } from 'svelte';
 	import { useRecording } from '$lib/composables/useRecording.js';
@@ -49,6 +50,8 @@
 		recording.deleteRecording(updateState);
 	}
 
+	// no test loaders
+
 	onDestroy(() => {
 		recording.cleanup();
 		if (recordedAudio) {
@@ -63,12 +66,8 @@
 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
 	<div class="max-w-2xl mx-auto">
 		<div class="bg-white rounded-2xl shadow-xl p-8">
-			<h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">
-				음성 녹음
-			</h1>
-			<p class="text-gray-600 text-center mb-8">
-				마이크를 사용하여 음성을 녹음하고 확인하세요
-			</p>
+			<h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">음성 녹음</h1>
+			<p class="text-gray-600 text-center mb-8">마이크를 사용하여 음성을 녹음하고 확인하세요</p>
 
 			<!-- MIC 아이콘 및 웨이브폼 -->
 			<div class="border-2 border-gray-800 rounded-lg p-8 mb-8 bg-white">
@@ -87,10 +86,9 @@
 			/>
 
 			<!-- 녹음된 오디오 재생 -->
-			<AudioPlayer
-				recordedAudio={recordedAudio}
-				onDelete={handleDeleteRecording}
-			/>
+			<AudioPlayer recordedAudio={recordedAudio} onDelete={handleDeleteRecording} />
 		</div>
 	</div>
+
+    
 </div>
