@@ -1,67 +1,54 @@
 import { json } from '@sveltejs/kit';
-import { supabaseServer } from '$lib/supabaseClient'; // 기존 auth.signUp 사용
-import { supabaseAdmin } from '$lib/server/supabaseAdmin.js'; // 서버/관리용 클라이언트
+import { supabaseServer } from '$lib/server/supabaseServer';
 import bcrypt from 'bcryptjs';
 
+// 로그인 전용 엔드포인트
+// 클라이언트(`useAuth.login`)에서는 { data: { session, user } } 형태를 기대하고 있음
 export async function POST({ request }) {
   try {
-    // 전체 바디를 한 번만 읽음 (이 안에 name이 있을 수 있음)
     const body = await request.json();
-    const { email, password, name } = body;
+    const { email, password } = body ?? {};
 
     if (!email || !password) {
       return json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    // 1) Supabase Auth로 사용자 생성 (이메일/비밀번호 기반)
-    const { data: signUpData, error: signUpError } = await supabaseServer.auth.signUp({
-      email,
-      password
-    });
-
-    if (signUpError) {
-      return json({ error: signUpError.message }, { status: 400 });
-    }
-
-    const user = signUpData?.user;
-    if (!user || !user.id) {
-      return json({ error: 'Failed to create auth user' }, { status: 500 });
-    }
-
-    // 2) 비밀번호 해시화 (bcrypt)
-    const saltRounds = 12;
-    const password_hash = await bcrypt.hash(password, saltRounds);
-
-    // 3) users 테이블에 추가 기록 (service-role 클라이언트 사용)
-    // name이 제공되지 않으면 '(unknown)'으로 대체하여 NOT NULL 제약 회피
-    const nameValue = (name ?? '(unknown)').toString().trim() || '(unknown)';
-
-    // 중복 이메일 방지: INSERT 전에 같은 이메일이 이미 있는지 확인
-    const { data: existingUser, error: existingError } = await supabaseAdmin
+    // 이메일로 사용자 조회
+    const { data: users, error: fetchError } = await supabaseServer
       .from('users')
-      .select('id, email')
+      .select('*')
       .eq('email', email)
-      .maybeSingle();
+      .limit(1);
 
-    if (existingError) {
-      return json({ error: existingError.message }, { status: 500 });
+    if (fetchError) {
+      console.error('[POST /api/auth/login] Database error:', fetchError);
+      return json({ error: 'Database error' }, { status: 500 });
     }
 
-    if (!existingUser) {
-      const { data: insertData, error: insertError } = await supabaseAdmin
-        .from('users')
-        .insert([{ id: user.id, email, password_hash, name: nameValue }]);
-
-      if (insertError) {
-        return json({ error: insertError.message }, { status: 500 });
-      }
-    } else {
-      // 이미 users 레코드가 존재하는 경우: 삽입 생략.
-      // 필요시 여기서 기존 레코드 업데이트(예: name/password_hash 동기화) 로직 추가 가능.
+    if (!users || users.length === 0) {
+      return json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    return json({ data: { user: signUpData.user } }, { status: 201 });
+    const user = users[0];
+
+    // 비밀번호 검증
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    // 민감한 정보 제거
+    const { password_hash, ...safeUser } = user;
+
+    // 세션 토큰 생성 (간단한 구현)
+    const session = {
+      access_token: `user_${user.id}_${Date.now()}`,
+      user: safeUser
+    };
+
+    return json({ data: { user: safeUser, session } }, { status: 200 });
   } catch (err) {
+    console.error('[POST /api/auth/login] Unexpected error:', err);
     return json({ error: String(err) }, { status: 500 });
   }
 }

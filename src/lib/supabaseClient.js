@@ -1,15 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_DB_URL, SUPABASE_DB_PUBLIC_KEY, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_URL} from '$env/static/private';
+import { createClient } from '@supabase/supabase-js'
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
 
-export const supabaseServer = createClient(
-  SUPABASE_DB_URL, 
-  SUPABASE_DB_PUBLIC_KEY, 
-  {
-    auth: { persistSession: false }
-  });
+const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY)
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  { auth: { persistSession: true, detectSessionInUrl: false } }
-);
+export { supabase }
+export default supabase

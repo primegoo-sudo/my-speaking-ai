@@ -72,9 +72,10 @@
 <form on:submit|preventDefault={submit} class="space-y-4">
   {#if mode === 'signup'}
     <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">사용자 이름</label>
+      <label for="name" class="block text-sm font-medium text-gray-700 mb-1">사용자 이름</label>
       <input
         type="text"
+        id="name"
         name="name"
         bind:value={name}
         required
@@ -85,17 +86,18 @@
   {/if}
 
   <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-    <input type="email" bind:value={email} required placeholder="you@example.com"
+    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+    <input type="email" id="email" bind:value={email} required placeholder="you@example.com"
       name="email"
       class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
   </div>
 
   <div class="relative">
-    <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
     <div class="flex items-center">
       <input
         type={showPassword ? 'text' : 'password'}
+        id="password"
         name="password"
         bind:value={password}
         required
@@ -122,10 +124,11 @@
 
   {#if mode === 'signup'}
     <div class="relative">
-      <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
+      <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
       <div class="flex items-center">
         <input
           type={showConfirm ? 'text' : 'password'}
+          id="confirmPassword"
           name="confirmPassword"
           bind:value={confirmPassword}
           required

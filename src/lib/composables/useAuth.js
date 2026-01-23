@@ -5,7 +5,12 @@ export function useAuth() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    return res.json();
+    if (res.ok) {
+      return await res.json();
+    } else {
+      console.error(`Error: ${res.status} ${res.statusText}`);
+      return { error: `Error: ${res.status} ${res.statusText}` };
+    }
   }
 
   async function signup(name, email, password) {

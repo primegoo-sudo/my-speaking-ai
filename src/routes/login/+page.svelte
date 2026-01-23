@@ -25,9 +25,9 @@
 
     <!-- Right: 로그인 카드 -->
     <div class="flex items-center justify-center">
-      <div class="w-full max-w-md bg-white shadow-md rounded-lg p-6">
+      <div class="w-full max-w-md bg-white shadow-md rounded-lg p-6 login-card">
         <div class="flex items-center justify-center mb-4">
-          <img src="logo.svg" alt="logo" class="h-25 w-25 mr-3"/>
+          <img src="logo.svg" alt="logo" class="h-25 w-25 mr-3 logo"/>
           <span class="text-xl font-semibold">My Speaking AI</span>
         </div>
 
@@ -46,4 +46,17 @@
 
 <style>
   /* 기본 폰트/스페이싱 보정(프로젝트 Tailwind를 사용중이면 대부분 무시됨) */
+  @media (max-width: 640px) {
+    .login-card {
+      width: 100%;
+      padding: 1.5rem;
+    }
+    .logo {
+      width: 3rem;
+      height: 3rem;
+    }
+    h1 {
+      font-size: 1.75rem;
+    }
+  }
 </style>
