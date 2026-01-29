@@ -20,7 +20,7 @@
 
 <Header />
 
-{#if checked && !authed && path !== '/login' && path !== '/signup'}
+{#if checked && !authed && path !== '/login' && path !== '/signup' && path !== '/practice'}
   <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <div class="bg-white shadow-md rounded-lg p-8 max-w-md text-center">
       <h2 class="text-xl font-semibold mb-4">로그인이 필요합니다</h2>

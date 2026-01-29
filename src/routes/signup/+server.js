@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { supabaseServer } from '$lib/supabaseClient';
+import { supabaseClient } from '$lib/supabaseClient';
 
 export async function POST({ request }) {
   try {
@@ -8,7 +8,7 @@ export async function POST({ request }) {
       return json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    const { data, error } = await supabaseServer.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password
     });

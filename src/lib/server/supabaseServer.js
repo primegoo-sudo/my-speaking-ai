@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_DB_URL, SUPABASE_DB_SERVICE_ROLE } from '$env/static/private';
+import { PUBLIC_SUPABASE_DB_URL, PUBLIC_SUPABASE_DB_SERVICE_ROLE } from '$env/static/public';
 
-if (!SUPABASE_DB_URL || !SUPABASE_DB_SERVICE_ROLE) {
+if (!PUBLIC_SUPABASE_DB_URL || !PUBLIC_SUPABASE_DB_SERVICE_ROLE) {
   console.warn('[supabaseServer] SUPABASE_DB_URL or SUPABASE_DB_SERVICE_ROLE is not set');
 }
 
-export const supabaseServer = createClient(SUPABASE_DB_URL, SUPABASE_DB_SERVICE_ROLE);
+export const supabaseServer = createClient(PUBLIC_SUPABASE_DB_URL, PUBLIC_SUPABASE_DB_SERVICE_ROLE);

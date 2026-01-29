@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_DB_URL, SUPABASE_DB_SERVICE_ROLE } from '$env/static/private';
+import { PUBLIC_SUPABASE_DB_URL, PUBLIC_SUPABASE_DB_SERVICE_ROLE } from '$env/static/public';
 import bcrypt from 'bcryptjs';
 
-const supabase = createClient(SUPABASE_DB_URL, SUPABASE_DB_SERVICE_ROLE);
+const supabase = createClient(PUBLIC_SUPABASE_DB_URL, PUBLIC_SUPABASE_DB_SERVICE_ROLE);
 
 export async function POST({ request }) {
   const contentType = (request.headers.get('content-type') || '').toLowerCase();

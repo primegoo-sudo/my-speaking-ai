@@ -36,6 +36,6 @@
 		"@supabase/supabase-js": "^2.90.1",
 		"bcryptjs": "^3.0.3",
 		"openai": "^6.15.0",
-		"vercel": "^50.1.6"
+		"vercel": "^50.8.1"
 	}
 }
