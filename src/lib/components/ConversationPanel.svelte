@@ -1,3 +1,4 @@
+<!-- src/lib/components/ConversationPanel.svelte -->
 <script>
 	export let conversationHistory = [];
 	export let isProcessing = false;

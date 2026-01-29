@@ -1,3 +1,4 @@
+<!-- src/lib/components/MicIcon.svelte -->
 <script>
 	let { isRecording = false } = $props();
 </script>

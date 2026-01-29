@@ -1,46 +1,116 @@
-export function useAuth() {
-  async function request(path, body) {
-    const res = await fetch(`/api/auth/${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (res.ok) {
-      return await res.json();
-    } else {
-      console.error(`Error: ${res.status} ${res.statusText}`);
-      return { error: `Error: ${res.status} ${res.statusText}` };
-    }
-  }
+import { supabaseClient } from '$lib/supabaseClient';
 
+export function useAuth() {
   async function signup(name, email, password) {
-    const res = await request('signup', { name, email, password });
-    if (!res?.error && res.data?.user) {
-      try { localStorage.setItem('authUser', JSON.stringify(res.data.user)); } catch {}
+    try {
+      // Supabase Auth로 회원가입
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || email.split('@')[0]
+          }
+        }
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // 로컬스토리지에 사용자 정보 저장
+      if (data?.user) {
+        try {
+          localStorage.setItem('authUser', JSON.stringify(data.user));
+          if (data.session?.access_token) {
+            localStorage.setItem('authToken', data.session.access_token);
+          }
+        } catch (storageError) {
+          console.error('localStorage error:', storageError);
+        }
+      }
+
+      return { data };
+    } catch (err) {
+      console.error('Signup error:', err);
+      return { error: err.message || '회원가입 중 오류가 발생했습니다.' };
     }
-    return res;
   }
 
   async function login(email, password) {
-    const res = await request('login', { email, password });
-    // Expecting server returns { data: { session, user } } on success
-    if (!res?.error && res.data?.user) {
-      try {
-        localStorage.setItem('authUser', JSON.stringify(res.data.user));
-        if (res.data.session?.access_token) localStorage.setItem('authToken', res.data.session.access_token);
-      } catch {}
+    try {
+      // Supabase Auth로 로그인
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // 로컬스토리지에 사용자 정보 저장
+      if (data?.user) {
+        try {
+          localStorage.setItem('authUser', JSON.stringify(data.user));
+          if (data.session?.access_token) {
+            localStorage.setItem('authToken', data.session.access_token);
+          }
+        } catch (storageError) {
+          console.error('localStorage error:', storageError);
+        }
+      }
+
+      return { data };
+    } catch (err) {
+      console.error('Login error:', err);
+      return { error: err.message || '로그인 중 오류가 발생했습니다.' };
     }
-    return res;
   }
 
-  function logout() {
+  async function logout() {
     try {
+      // Supabase Auth 로그아웃
+      await supabaseClient.auth.signOut();
+      
+      // 로컬스토리지 정리
       localStorage.removeItem('authUser');
       localStorage.removeItem('authToken');
-    } catch {}
-    // trigger a reload so stores and UI update
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    
+    // 로그인 페이지로 이동
     location.href = '/login';
   }
 
-  return { signup, login, logout };
+  async function getSession() {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        console.error('Get session error:', error);
+        return null;
+      }
+      return data.session;
+    } catch (err) {
+      console.error('Get session error:', err);
+      return null;
+    }
+  }
+
+  async function getUser() {
+    try {
+      const { data, error } = await supabaseClient.auth.getUser();
+      if (error) {
+        console.error('Get user error:', error);
+        return null;
+      }
+      return data.user;
+    } catch (err) {
+      console.error('Get user error:', err);
+      return null;
+    }
+  }
+
+  return { signup, login, logout, getSession, getUser };
 }

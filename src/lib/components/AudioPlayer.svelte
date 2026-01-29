@@ -1,3 +1,4 @@
+<!-- src/lib/components/AudioPlayer.svelte -->
 <script>
 	let { recordedAudio = null, onDelete = () => {} } = $props();
 </script>

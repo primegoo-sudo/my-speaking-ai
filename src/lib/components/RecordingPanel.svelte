@@ -1,3 +1,4 @@
+<!-- src/lib/components/RecordingPanel.svelte -->
 <script>
 	export let isRecording = false;
 	export let isProcessing = false;

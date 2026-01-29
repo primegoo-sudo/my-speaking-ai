@@ -20,19 +20,6 @@
 
 <Header />
 
-{#if checked && !authed && path !== '/login' && path !== '/signup' && path !== '/practice'}
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <div class="bg-white shadow-md rounded-lg p-8 max-w-md text-center">
-      <h2 class="text-xl font-semibold mb-4">로그인이 필요합니다</h2>
-      <p class="text-gray-600 mb-6">이 기능에 접근하려면 로그인이 필요합니다.</p>
-      <div class="flex justify-center gap-3">
-        <a href="/login" class="px-4 py-2 bg-blue-600 text-white rounded">로그인</a>
-        <a href="/signup" class="px-4 py-2 border rounded text-blue-600">회원가입</a>
-      </div>
-    </div>
-  </div>
-{:else}
-  <main class="min-h-[calc(100vh-4rem)]">
-    <slot />
-  </main>
-{/if}
+<main class="min-h-[calc(100vh-4rem)]">
+  <slot />
+</main>

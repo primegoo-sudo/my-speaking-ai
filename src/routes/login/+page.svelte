@@ -3,8 +3,8 @@
   import AuthForm from '$lib/components/AuthForm.svelte';
 
   function handleSuccess(e) {
-    // 로그인 성공하면 홈으로 이동
-    goto('/', { replaceState: true });
+     // 로그인 성공하면 AI 대화 화면으로 이동
+     goto('/practice', { replaceState: true });
   }
 </script>
 

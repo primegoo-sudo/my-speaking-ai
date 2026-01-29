@@ -1,54 +1,35 @@
 import { json } from '@sveltejs/kit';
-import { supabaseServer } from '$lib/server/supabaseServer';
-import bcrypt from 'bcryptjs';
+import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-// 로그인 전용 엔드포인트
-// 클라이언트(`useAuth.login`)에서는 { data: { session, user } } 형태를 기대하고 있음
+// Supabase Auth를 사용한 로그인 엔드포인트
+// 참고: 이 엔드포인트는 이제 클라이언트에서 직접 supabaseClient.auth.signInWithPassword()를 호출하므로 선택사항입니다.
 export async function POST({ request }) {
   try {
     const body = await request.json();
     const { email, password } = body ?? {};
 
     if (!email || !password) {
-      return json({ error: 'Email and password required' }, { status: 400 });
+      return json({ error: '이메일과 비밀번호를 입력해주세요.' }, { status: 400 });
     }
 
-    // 이메일로 사용자 조회
-    const { data: users, error: fetchError } = await supabaseServer
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .limit(1);
+    // Supabase Auth 클라이언트 생성
+    const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
-    if (fetchError) {
-      console.error('[POST /api/auth/login] Database error:', fetchError);
-      return json({ error: 'Database error' }, { status: 500 });
+    // Supabase Auth로 로그인
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('[POST /api/auth/login] Auth error:', error);
+      return json({ error: error.message }, { status: 401 });
     }
 
-    if (!users || users.length === 0) {
-      return json({ error: 'Invalid email or password' }, { status: 401 });
-    }
-
-    const user = users[0];
-
-    // 비밀번호 검증
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    if (!isValidPassword) {
-      return json({ error: 'Invalid email or password' }, { status: 401 });
-    }
-
-    // 민감한 정보 제거
-    const { password_hash, ...safeUser } = user;
-
-    // 세션 토큰 생성 (간단한 구현)
-    const session = {
-      access_token: `user_${user.id}_${Date.now()}`,
-      user: safeUser
-    };
-
-    return json({ data: { user: safeUser, session } }, { status: 200 });
+    return json({ data }, { status: 200 });
   } catch (err) {
     console.error('[POST /api/auth/login] Unexpected error:', err);
-    return json({ error: String(err) }, { status: 500 });
+    return json({ error: '로그인 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }

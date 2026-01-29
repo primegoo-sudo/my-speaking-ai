@@ -1,15 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
 function getSupabaseClient() {
-  const SUPABASE_URL = env.SUPABASE_DB_URL;
-  const SUPABASE_KEY = env.SUPABASE_DB_PUBLIC_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    throw new Error('SUPABASE_DB_URL and SUPABASE_DB_PUBLIC_KEY must be set in environment');
+  if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error('PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY must be set in environment');
   }
 
-  return createClient(SUPABASE_URL, SUPABASE_KEY);
+  return createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 }
 
 export async function GET() {
@@ -21,7 +18,7 @@ export async function GET() {
   }
 
   const { data, error } = await supabase
-    .from('test_messages')
+    .from('test_items')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(10);
@@ -41,12 +38,13 @@ export async function POST({ request }) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const content = body.content || '테스트 메시지 from server';
-  const metadata = body.metadata || { env: 'dev' };
+  const name = body.name || 'test-item';
+  const description = body.description || 'Test from /api/test';
+  const metadata = body.metadata || { from: 'api-test' };
 
   const { data, error } = await supabase
-    .from('test_messages')
-    .insert([{ content, metadata }])
+    .from('test_items')
+    .insert([{ name, description, metadata }])
     .select();
 
   return new Response(JSON.stringify({ data, error }), {

@@ -1,5 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { authReady, isAuthenticated } from '$lib/stores/auth.js';
 	import { useRecording } from '$lib/composables/useRecording.js';
 	import { useRealtimeAgent } from '$lib/composables/useRealtimeAgent.js';
 	import DebugConsole from '$lib/components/DebugConsole.svelte';
@@ -27,6 +29,12 @@
 		onTextChunk: handleTextChunk,
 		onStateChange: handleStateChange
 	});
+
+	let redirected = false;
+	$: if (!redirected && $authReady && !$isAuthenticated) {
+		redirected = true;
+		goto('/login', { replaceState: true });
+	}
 
 	// ====== Event Handlers ======
 	function handleStateChange(state) {

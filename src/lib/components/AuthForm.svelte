@@ -1,3 +1,4 @@
+<!-- src/lib/components/AuthForm.svelte -->
 <script>
   import { createEventDispatcher } from 'svelte';
   import { useAuth } from '$lib/composables/useAuth.js';
@@ -46,21 +47,52 @@
   async function submit() {
     if (!validate()) return;
     loading = true;
+    error = '';
+    
     try {
       const res = mode === 'signup'
         ? await signup(name, email, password)
         : await login(email, password);
 
       if (res?.error) {
-        error = res.error;
+        // Supabase 에러 메시지를 한글로 변환
+        const errorMsg = translateError(res.error);
+        error = errorMsg;
       } else {
+        // 성공 시 이벤트 디스패치
         dispatch('success', res.data ?? res);
       }
     } catch (e) {
-      error = e?.message ?? String(e);
+      error = e?.message ?? '알 수 없는 오류가 발생했습니다.';
     } finally {
       loading = false;
     }
+  }
+
+  function translateError(err) {
+    const errorStr = typeof err === 'string' ? err : err?.message || '';
+    
+    // 일반적인 Supabase 에러 메시지 번역
+    if (errorStr.includes('Invalid login credentials') || errorStr.includes('invalid_credentials')) {
+      return '이메일 또는 비밀번호가 올바르지 않습니다.';
+    }
+    if (errorStr.includes('Email not confirmed')) {
+      return '이메일 인증이 필요합니다. 이메일을 확인해주세요.';
+    }
+    if (errorStr.includes('User already registered')) {
+      return '이미 등록된 이메일입니다.';
+    }
+    if (errorStr.includes('Password should be at least')) {
+      return '비밀번호는 최소 6자 이상이어야 합니다.';
+    }
+    if (errorStr.includes('Unable to validate email address')) {
+      return '유효하지 않은 이메일 주소입니다.';
+    }
+    if (errorStr.includes('Signup requires a valid password')) {
+      return '유효한 비밀번호를 입력해주세요.';
+    }
+    
+    return errorStr || '오류가 발생했습니다.';
   }
 
   function toggleShow(p) {

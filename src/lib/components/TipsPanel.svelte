@@ -1,3 +1,4 @@
+<!-- src/lib/components/TipsPanel.svelte -->
 <script>
 	export let tips = [
 		'• 한글이나 영어로 자유롭게 말하세요',

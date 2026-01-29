@@ -1,3 +1,4 @@
+<!-- src/lib/components/ApiStatusPanel.svelte -->
 <script>
 	export let apiActivityStatus = {
 		hasActiveRequest: false,

@@ -1,3 +1,4 @@
+<!-- src/lib/components/DebugConsole.svelte -->
 <script>
   import { debugLogs, clearDebug } from '$lib/stores/debug.js';
   import { derived } from 'svelte/store';

@@ -1,3 +1,4 @@
+<!-- src/lib/components/WaveformDisplay.svelte -->
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { useWaveform } from '$lib/composables/useWaveform.js';
