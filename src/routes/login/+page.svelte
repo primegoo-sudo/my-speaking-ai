@@ -3,8 +3,16 @@
   import AuthForm from '$lib/components/AuthForm.svelte';
 
   function handleSuccess(e) {
-     // 로그인 성공하면 AI 대화 화면으로 이동
-     goto('/practice', { replaceState: true });
+     // 이메일 인증 대기 상태 확인
+     const emailVerificationPending = localStorage.getItem('emailVerificationPending');
+     
+     if (emailVerificationPending) {
+       // 이메일 인증 대기 중이면 회원가입 페이지로 이동하여 안내 표시
+       goto('/signup', { replaceState: true });
+     } else {
+       // 로그인 성공하면 AI 대화 화면으로 이동
+       goto('/practice', { replaceState: true });
+     }
   }
 </script>
 

@@ -3,14 +3,15 @@ import { supabaseClient } from '$lib/supabaseClient';
 export function useAuth() {
   async function signup(name, email, password) {
     try {
-      // Supabase Auth로 회원가입
+      // Supabase Auth로 회원가입 (이메일 확인 활성화)
       const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
           data: {
             name: name || email.split('@')[0]
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
@@ -18,13 +19,15 @@ export function useAuth() {
         return { error: error.message };
       }
 
-      // 로컬스토리지에 사용자 정보 저장
+      // 로컬스토리지에 사용자 정보 저장 (이메일 미확인 상태)
       if (data?.user) {
         try {
           localStorage.setItem('authUser', JSON.stringify(data.user));
           if (data.session?.access_token) {
             localStorage.setItem('authToken', data.session.access_token);
           }
+          // 이메일 인증 대기 상태 저장
+          localStorage.setItem('emailVerificationPending', 'true');
         } catch (storageError) {
           console.error('localStorage error:', storageError);
         }

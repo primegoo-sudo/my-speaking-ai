@@ -29,14 +29,31 @@ export async function POST({ request }) {
     if (!password) {
       return json({ error: '비밀번호를 입력해주세요.' }, { status: 400 });
     }
+    
+    // 비밀번호 강도 검증
+    const passwordErrors = [];
+    
     if (password.length < 6) {
-      return json({ error: '비밀번호는 최소 6자 이상이어야 합니다.' }, { status: 400 });
+      passwordErrors.push('최소 6자 이상이어야 합니다.');
+    }
+    if (!/[A-Z]/.test(password)) {
+      passwordErrors.push('영문 대문자(A-Z)를 포함해야 합니다.');
+    }
+    if (!/[a-z]/.test(password)) {
+      passwordErrors.push('영문 소문자(a-z)를 포함해야 합니다.');
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      passwordErrors.push('특수문자(!@#$%^&* 등)를 포함해야 합니다.');
+    }
+    
+    if (passwordErrors.length > 0) {
+      return json({ error: '비밀번호 요구사항: ' + passwordErrors.join(', ') }, { status: 400 });
     }
 
     // Supabase Auth 클라이언트 생성
     const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
-    // Supabase Auth로 회원가입
+    // Supabase Auth로 회원가입 (이메일 확인 활성화)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

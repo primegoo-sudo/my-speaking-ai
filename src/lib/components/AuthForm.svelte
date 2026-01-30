@@ -2,6 +2,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { useAuth } from '$lib/composables/useAuth.js';
+  import { validatePasswordStrength } from '$lib/utils/passwordValidator.js';
 
   export let mode = 'login'; // 'login' | 'signup'
   const dispatch = createEventDispatcher();
@@ -17,6 +18,8 @@
   // password visibility
   let showPassword = false;
   let showConfirm = false;
+  let emailSent = false;
+  let verificationMessage = '';
 
   function validate() {
     if (mode === 'signup') {
@@ -35,8 +38,11 @@
         error = '비밀번호가 일치하지 않습니다.';
         return false;
       }
-      if (password.length < 8) {
-        error = '비밀번호는 최소 8자 이상이어야 합니다.';
+      
+      // 비밀번호 강도 검증
+      const pwdValidation = validatePasswordStrength(password);
+      if (!pwdValidation.isValid) {
+        error = '비밀번호 요구사항: ' + pwdValidation.errors.join(', ');
         return false;
       }
     }
@@ -59,8 +65,18 @@
         const errorMsg = translateError(res.error);
         error = errorMsg;
       } else {
-        // 성공 시 이벤트 디스패치
-        dispatch('success', res.data ?? res);
+        // 회원가입 성공 시 이메일 인증 안내
+        if (mode === 'signup') {
+          emailSent = true;
+          verificationMessage = `${email}로 인증 이메일이 전송되었습니다. 이메일을 확인하여 계정을 활성화해주세요.`;
+          // 3초 후 성공 이벤트 디스패치
+          setTimeout(() => {
+            dispatch('success', res.data ?? res);
+          }, 3000);
+        } else {
+          // 로그인 성공
+          dispatch('success', res.data ?? res);
+        }
       }
     } catch (e) {
       error = e?.message ?? '알 수 없는 오류가 발생했습니다.';
@@ -102,6 +118,20 @@
 </script>
 
 <form on:submit|preventDefault={submit} class="space-y-4">
+  {#if emailSent}
+    <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="flex items-start">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div class="text-green-800">
+          <h3 class="font-semibold mb-1">인증 이메일을 확인하세요</h3>
+          <p class="text-sm">{verificationMessage}</p>
+          <p class="text-xs mt-2 text-green-700">이메일 인증 후 자동으로 로그인됩니다.</p>
+        </div>
+      </div>
+    </div>
+  {:else}
   {#if mode === 'signup'}
     <div>
       <label for="name" class="block text-sm font-medium text-gray-700 mb-1">사용자 이름</label>
@@ -152,6 +182,45 @@
         {/if}
       </button>
     </div>
+    {#if mode === 'signup' && password}
+      <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200 text-sm">
+        <div class="mb-2 font-medium text-gray-700">비밀번호 요구사항:</div>
+        <div class="space-y-1">
+          <div class={password.length >= 6 ? 'text-green-600' : 'text-red-600'}>
+            {#if password.length >= 6}
+              ✓
+            {:else}
+              ✗
+            {/if}
+            최소 6자 이상
+          </div>
+          <div class={/[A-Z]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+            {#if /[A-Z]/.test(password)}
+              ✓
+            {:else}
+              ✗
+            {/if}
+            영문 대문자 (A-Z)
+          </div>
+          <div class={/[a-z]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+            {#if /[a-z]/.test(password)}
+              ✓
+            {:else}
+              ✗
+            {/if}
+            영문 소문자 (a-z)
+          </div>
+          <div class={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+            {#if /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)}
+              ✓
+            {:else}
+              ✗
+            {/if}
+            특수문자 (!@#$%^&* 등)
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 
   {#if mode === 'signup'}
@@ -165,7 +234,13 @@
           bind:value={confirmPassword}
           required
           placeholder="비밀번호 재입력"
-          class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 {
+            confirmPassword && password
+              ? password === confirmPassword
+                ? 'border-green-500 focus:ring-green-400'
+                : 'border-red-500 focus:ring-red-400'
+              : 'focus:ring-blue-400'
+          }"
         />
         <button type="button" on:click={() => toggleShow('confirm')} aria-label="Toggle confirm password visibility"
           class="ml-2 p-2 text-gray-600 hover:text-gray-800">
@@ -180,7 +255,25 @@
             </svg>
           {/if}
         </button>
+        {#if confirmPassword && password}
+          {#if password === confirmPassword}
+            <span class="ml-2 text-green-500" aria-label="Passwords match">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </span>
+          {:else}
+            <span class="ml-2 text-red-500" aria-label="Passwords do not match">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </span>
+          {/if}
+        {/if}
       </div>
+      {#if confirmPassword && password !== confirmPassword}
+        <p class="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>
+      {/if}
     </div>
   {/if}
 
@@ -193,4 +286,5 @@
     disabled={loading}>
     {#if loading}처리중...{:else}{mode === 'signup' ? '회원가입' : '로그인'}{/if}
   </button>
+  {/if}
 </form>
