@@ -1,7 +1,9 @@
 import { OpenAI } from 'openai';
 import { json, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { englishConversationPrompt } from '$lib/prompts/englishConversationTutor.js';
+import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
@@ -32,6 +34,8 @@ export async function POST({ request }) {
     const form = await request.formData();
     const audioFile = form.get('audio');
     const sessionId = form.get('sessionId') || `session-${Date.now()}`;
+    const sessionTitle = form.get('sessionTitle');
+    const duration = Number(form.get('duration') || 0);
 
     if (!audioFile || !(audioFile instanceof File)) {
       return error(400, { message: 'No audio file provided' });
@@ -90,7 +94,43 @@ export async function POST({ request }) {
     const audioBuffer = Buffer.from(await speechResponse.arrayBuffer());
     const audioBase64 = audioBuffer.toString('base64');
 
-    // 7️⃣ Return JSON response
+    // 7️⃣ Save conversation to DB (if authenticated)
+    try {
+      const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+      const supabaseUrl = env.SUPABASE_DB_URL || publicEnv.PUBLIC_SUPABASE_URL || publicEnv.PUBLIC_SUPABASE_DB_URL;
+      const supabaseKey = env.SUPABASE_DB_PUBLIC_KEY || publicEnv.PUBLIC_SUPABASE_ANON_KEY || publicEnv.PUBLIC_SUPABASE_DB_PUBLIC_KEY;
+
+      if (token && supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } }
+        });
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (!userError && userData?.user?.id) {
+          const insertPayload = {
+            user_id: userData.user.id,
+            title: sessionTitle || null,
+            user_message: userText,
+            assistant_message: assistantText,
+            duration: Number.isFinite(duration) ? duration : 0
+          };
+
+          const { error: insertError } = await supabase
+            .from('conversations')
+            .insert([insertPayload]);
+
+          if (insertError) {
+            console.warn('[POST /api/realtime] Failed to save conversation:', insertError.message);
+          }
+        }
+      }
+    } catch (saveError) {
+      console.warn('[POST /api/realtime] Save error:', saveError?.message || saveError);
+    }
+
+    // 8️⃣ Return JSON response
     return json({
       sessionId,
       userText,

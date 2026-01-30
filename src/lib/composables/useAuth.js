@@ -3,29 +3,23 @@ import { supabaseClient } from '$lib/supabaseClient';
 export function useAuth() {
   async function signup(name, email, password) {
     try {
-      // Supabase Auth로 회원가입 (이메일 확인 활성화)
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name || email.split('@')[0]
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+      // 서버 API를 통해 회원가입 (데이터베이스 저장 + 이메일 발송)
+      const response = await fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
       });
 
-      if (error) {
-        return { error: error.message };
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { error: result.error || '회원가입 중 오류가 발생했습니다.' };
       }
 
       // 로컬스토리지에 사용자 정보 저장 (이메일 미확인 상태)
-      if (data?.user) {
+      if (result?.data?.user) {
         try {
-          localStorage.setItem('authUser', JSON.stringify(data.user));
-          if (data.session?.access_token) {
-            localStorage.setItem('authToken', data.session.access_token);
-          }
+          localStorage.setItem('authUser', JSON.stringify(result.data.user));
           // 이메일 인증 대기 상태 저장
           localStorage.setItem('emailVerificationPending', 'true');
         } catch (storageError) {
@@ -33,7 +27,7 @@ export function useAuth() {
         }
       }
 
-      return { data };
+      return { data: result.data };
     } catch (err) {
       console.error('Signup error:', err);
       return { error: err.message || '회원가입 중 오류가 발생했습니다.' };

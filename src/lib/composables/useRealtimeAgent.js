@@ -33,7 +33,7 @@ export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange } = 
    * Start a conversation turn with audio
    * @param {Blob} audioBlob - Audio blob from MediaRecorder
    */
-  async function startSession(audioBlob) {
+  async function startSession(audioBlob, options = {}) {
     if (!audioBlob) {
       updateState({ error: 'No audio provided' });
       return null;
@@ -54,6 +54,9 @@ export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange } = 
       const filename = audioBlob.type?.includes('webm') ? 'recording.webm' : 'recording.wav';
       formData.append('audio', audioBlob, filename);
       formData.append('sessionId', sessionId);
+      if (options.sessionTitle) formData.append('sessionTitle', options.sessionTitle);
+      if (options.duration !== undefined) formData.append('duration', String(options.duration));
+      if (options.clientCreatedAt) formData.append('clientCreatedAt', options.clientCreatedAt);
 
       logDebug('realtime', 'POST /api/realtime');
       
@@ -61,10 +64,16 @@ export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange } = 
       const controller = new AbortController();
       activeRequest = controller;
       
+      const headers = {};
+      if (options.authToken) {
+        headers.Authorization = `Bearer ${options.authToken}`;
+      }
+
       const response = await fetch('/api/realtime', {
         method: 'POST',
         body: formData,
-        signal: controller.signal
+        signal: controller.signal,
+        headers
       });
 
       if (!response.ok) {

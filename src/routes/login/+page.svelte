@@ -1,12 +1,15 @@
 <script>
   import { goto } from '$app/navigation';
+  import { authReady, isAuthenticated } from '$lib/stores/auth.js';
   import AuthForm from '$lib/components/AuthForm.svelte';
+  import { supabaseClient } from '$lib/supabaseClient';
+    import { onMount } from 'svelte';
 
   function handleSuccess(e) {
      // 이메일 인증 대기 상태 확인
      const emailVerificationPending = localStorage.getItem('emailVerificationPending');
-     
-     if (emailVerificationPending) {
+     console.log('Email verification pending:', emailVerificationPending);
+     if (!emailVerificationPending) {
        // 이메일 인증 대기 중이면 회원가입 페이지로 이동하여 안내 표시
        goto('/signup', { replaceState: true });
      } else {
@@ -14,6 +17,27 @@
        goto('/practice', { replaceState: true });
      }
   }
+
+  let redirected = false;
+  console.log('Auth Ready:', $authReady, 'Is Authenticated:', $isAuthenticated);
+  
+  onMount(
+    async () => {
+      try{
+        const { data, error } = await supabaseClient.auth.getSession();
+      }catch(err){
+        console.error('Error getting session:', err);
+      }finally{
+        if (!redirected && $authReady && !$isAuthenticated) {
+          redirected = true;    
+          goto('/login', { replaceState: true });
+        } else {
+          goto('/practice', { replaceState: true });
+        }
+      }
+    }    
+  )
+
 </script>
 
 <section class="min-h-screen flex items-center justify-center bg-gray-50">

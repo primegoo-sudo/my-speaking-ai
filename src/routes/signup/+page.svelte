@@ -1,11 +1,32 @@
 <script>
   import { goto } from '$app/navigation';
   import AuthForm from '$lib/components/AuthForm.svelte';
+  import { authReady, isAuthenticated } from '$lib/stores/auth.js';
+  import { supabaseClient } from '$lib/supabaseClient';
+  import { onMount } from 'svelte';
 
   function handleSuccess() {
      // 회원가입 성공하면 AI 대화 화면으로 이동
      goto('/practice', { replaceState: true });
   }
+
+  let redirected = false;
+  onMount(
+    async () => {
+      try{
+        const { data, error } = await supabaseClient.auth.getSession();
+      }catch(err){
+        console.error('Error getting session:', err);
+      }finally{
+        if (!redirected && $authReady && !$isAuthenticated) {
+          redirected = true;    
+          goto('/login', { replaceState: true });
+        } else {
+          goto('/practice', { replaceState: true });
+        }
+      }
+    }    
+  )
 </script>
 
 <section class="min-h-screen flex items-center justify-center bg-gray-50">

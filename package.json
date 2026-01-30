@@ -10,7 +10,9 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"lint": "eslint .",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test": "npm run test:unit -- --run",
+		"db:migrate": "node scripts/migrate-db.js",
+		"check:env": "node scripts/check-env.js"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
