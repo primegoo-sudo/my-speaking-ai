@@ -43,6 +43,7 @@
 
   function goLogin() { goto('/login') }
   function goSignup() { goto('/signup') }
+  function goProfile() { goto('/profile') }
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -57,7 +58,12 @@
   {:else}
     {#if user}
       <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-700">안녕하세요, {user.email}</span>
+        <button
+          on:click={goProfile}
+          class="text-sm text-gray-700 hover:text-indigo-600 underline-offset-2 hover:underline transition"
+        >
+          안녕하세요, {user.email}
+        </button>
         <button
           on:click={signOut}
           class="px-3 py-1.5 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300 transition"

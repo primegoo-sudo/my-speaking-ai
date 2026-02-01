@@ -3,7 +3,7 @@
   import { authReady, isAuthenticated } from '$lib/stores/auth.js';
   import AuthForm from '$lib/components/AuthForm.svelte';
   import { supabaseClient } from '$lib/supabaseClient';
-    import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
 
   function handleSuccess(e) {
      // 이메일 인증 대기 상태 확인
@@ -18,25 +18,12 @@
      }
   }
 
-  let redirected = false;
-  console.log('Auth Ready:', $authReady, 'Is Authenticated:', $isAuthenticated);
-  
-  onMount(
-    async () => {
-      try{
-        const { data, error } = await supabaseClient.auth.getSession();
-      }catch(err){
-        console.error('Error getting session:', err);
-      }finally{
-        if (!redirected && $authReady && !$isAuthenticated) {
-          redirected = true;    
-          goto('/login', { replaceState: true });
-        } else {
-          goto('/practice', { replaceState: true });
-        }
-      }
-    }    
-  )
+  // 이미 로그인된 사용자는 practice 페이지로 리다이렉트
+  onMount(async () => {
+    if ($authReady && $isAuthenticated) {
+      goto('/practice', { replaceState: true });
+    }
+  });
 
 </script>
 

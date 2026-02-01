@@ -89,6 +89,25 @@ export async function POST({ request }) {
 
     const assistantText = completion.choices[0].message.content;
     messages.push({ role: 'assistant', content: assistantText });
+
+    const promptTokens = Number(completion?.usage?.prompt_tokens || 0);
+    const completionTokens = Number(completion?.usage?.completion_tokens || 0);
+    const totalTokens = Number(completion?.usage?.total_tokens || 0);
+
+    const transcriptionChars = userText?.length || 0;
+    const ttsChars = assistantText?.length || 0;
+
+    // OpenAI 공식 요금 (2024년 기준, 환경변수로 덮어쓰기 가능)
+    const whisperUsdPerMin = Number(env.OPENAI_WHISPER_USD_PER_MIN || 0.006); // $0.006/min
+    const ttsUsdPer1kChars = Number(env.OPENAI_TTS_USD_PER_1K_CHARS || 0.015); // $0.015/1K chars
+    const gptInputUsdPer1k = Number(env.OPENAI_GPT4O_MINI_INPUT_USD_PER_1K || 0.00015); // $0.15/1M tokens
+    const gptOutputUsdPer1k = Number(env.OPENAI_GPT4O_MINI_OUTPUT_USD_PER_1K || 0.0006); // $0.60/1M tokens
+
+    const audioInputSeconds = Number.isFinite(duration) ? duration : 0;
+    const whisperCost = (audioInputSeconds / 60) * whisperUsdPerMin;
+    const gptCost = (promptTokens / 1000) * gptInputUsdPer1k + (completionTokens / 1000) * gptOutputUsdPer1k;
+    const ttsCost = (ttsChars / 1000) * ttsUsdPer1kChars;
+    const estimatedCostUsd = Number((whisperCost + gptCost + ttsCost).toFixed(6));
     
     // Keep history manageable (last 20 messages)
     if (messages.length > 21) {
@@ -126,14 +145,29 @@ export async function POST({ request }) {
 
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (!userError && userData?.user?.id) {
+          // 기본 필드
           const insertPayload = {
             user_id: userData.user.id,
             title: sessionTitle || null,
             user_message: userText,
             assistant_message: assistantText,
             duration: Number.isFinite(duration) ? duration : 0,
-            prompt_settings: promptOptions || null  // 프롬프트 설정 저장
+            prompt_settings: promptOptions || null
           };
+
+          // 사용량 추적 필드 (새 컬럼이 있을 경우에만 추가)
+          try {
+            insertPayload.audio_input_seconds = audioInputSeconds;
+            insertPayload.audio_output_seconds = 0;
+            insertPayload.transcription_chars = transcriptionChars;
+            insertPayload.tts_chars = ttsChars;
+            insertPayload.prompt_tokens = promptTokens;
+            insertPayload.completion_tokens = completionTokens;
+            insertPayload.total_tokens = totalTokens;
+            insertPayload.estimated_cost_usd = estimatedCostUsd;
+          } catch (err) {
+            console.warn('[POST /api/realtime] Usage fields not added to payload:', err);
+          }
 
           const { error: insertError } = await supabase
             .from('conversations')
@@ -141,6 +175,22 @@ export async function POST({ request }) {
 
           if (insertError) {
             console.warn('[POST /api/realtime] Failed to save conversation:', insertError.message);
+            // 새 컬럼 오류일 경우 기본 필드만으로 재시도
+            if (insertError.message?.includes('column') || insertError.code === '42703') {
+              const basicPayload = {
+                user_id: userData.user.id,
+                title: sessionTitle || null,
+                user_message: userText,
+                assistant_message: assistantText,
+                duration: Number.isFinite(duration) ? duration : 0
+              };
+              const { error: retryError } = await supabase
+                .from('conversations')
+                .insert([basicPayload]);
+              if (retryError) {
+                console.error('[POST /api/realtime] Retry failed:', retryError.message);
+              }
+            }
           }
         }
       }

@@ -10,23 +10,12 @@
      goto('/practice', { replaceState: true });
   }
 
-  let redirected = false;
-  onMount(
-    async () => {
-      try{
-        const { data, error } = await supabaseClient.auth.getSession();
-      }catch(err){
-        console.error('Error getting session:', err);
-      }finally{
-        if (!redirected && $authReady && !$isAuthenticated) {
-          redirected = true;    
-          goto('/login', { replaceState: true });
-        } else {
-          goto('/practice', { replaceState: true });
-        }
-      }
-    }    
-  )
+  // 이미 로그인된 사용자는 practice 페이지로 리다이렉트
+  onMount(async () => {
+    if ($authReady && $isAuthenticated) {
+      goto('/practice', { replaceState: true });
+    }
+  });
 </script>
 
 <section class="min-h-screen flex items-center justify-center bg-gray-50">

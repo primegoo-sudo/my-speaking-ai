@@ -368,9 +368,22 @@
 
 <!-- 프리셋 저장 다이얼로그 -->
 {#if showSaveDialog}
-	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" on:click={() => (showSaveDialog = false)}>
-		<div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" on:click|stopPropagation>
-			<h3 class="text-lg font-semibold text-gray-800 mb-4">💾 프리셋 저장</h3>
+	<div 
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+		on:click={() => (showSaveDialog = false)}
+		on:keydown={(e) => e.key === 'Escape' && (showSaveDialog = false)}
+		role="button"
+		tabindex="0"
+	>
+		<div 
+			class="bg-white rounded-lg p-6 max-w-md w-full mx-4" 
+			on:click|stopPropagation
+			on:keydown|stopPropagation
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="dialog-title"
+		>
+			<h3 id="dialog-title" class="text-lg font-semibold text-gray-800 mb-4">💾 프리셋 저장</h3>
 			
 			<div class="space-y-4">
 				<div>

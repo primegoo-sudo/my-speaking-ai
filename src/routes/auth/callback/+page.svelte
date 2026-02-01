@@ -31,7 +31,35 @@
         localStorage.removeItem('emailVerificationPending');
         localStorage.setItem('authUser', JSON.stringify(userData.user));
 
-        // 2초 후 연습 페이지로 이동
+        // 프로필 완성 여부 확인
+        try {
+          const { data: session } = await supabaseClient.auth.getSession();
+          if (session?.session?.access_token) {
+            const response = await fetch('/api/user-consent', {
+              headers: {
+                'Authorization': `Bearer ${session.session.access_token}`
+              }
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              
+              // 2초 후 적절한 페이지로 이동
+              setTimeout(() => {
+                if (!result.data?.profile_completed) {
+                  goto('/onboarding', { replaceState: true });
+                } else {
+                  goto('/practice', { replaceState: true });
+                }
+              }, 2000);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Profile check error:', err);
+        }
+
+        // 에러 발생 시 기본 동작 (practice로 이동, practice에서 재확인)
         setTimeout(() => {
           goto('/practice', { replaceState: true });
         }, 2000);

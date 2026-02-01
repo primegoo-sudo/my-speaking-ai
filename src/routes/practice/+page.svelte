@@ -254,9 +254,39 @@
 	};
 
 	let redirected = false;
+	let profileCheckDone = false;
+	
 	$: if (!redirected && $authReady && !$isAuthenticated) {
 		redirected = true;
 		goto('/login', { replaceState: true });
+	}
+	
+	// 프로필 완성 여부 확인
+	async function checkProfileCompletion() {
+		if (profileCheckDone) return;
+		
+		try {
+			const { data: session } = await supabaseClient.auth.getSession();
+			if (!session?.session?.access_token) return;
+			
+			const response = await fetch('/api/user-consent', {
+				headers: {
+					'Authorization': `Bearer ${session.session.access_token}`
+				}
+			});
+			
+			if (response.ok) {
+				const result = await response.json();
+				if (!result.data?.profile_completed) {
+					// 프로필 미완성 시 onboarding 페이지로 리다이렉트
+					goto('/onboarding');
+				}
+			}
+		} catch (err) {
+			console.error('Profile check error:', err);
+		} finally {
+			profileCheckDone = true;
+		}
 	}
 
 	// ====== Event Handlers ======
@@ -394,7 +424,10 @@
 	// ====== Lifecycle ======
 	let statusUpdateInterval;
 	
-	onMount(() => {
+	onMount(async () => {
+		// 프로필 완성 여부 확인
+		await checkProfileCompletion();
+		
 		statusUpdateInterval = setInterval(() => {
 			apiActivityStatus = realtime.getActivityStatus();
 		}, 1000);
