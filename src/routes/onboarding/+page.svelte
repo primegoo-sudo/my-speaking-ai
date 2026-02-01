@@ -134,7 +134,7 @@
 	});
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+<div class="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
 	<div class="max-w-2xl w-full bg-white rounded-lg shadow-xl p-8">
 		<div class="text-center mb-8">
 			<h1 class="text-3xl font-bold text-gray-800 mb-2">🎉 회원가입 완료!</h1>
