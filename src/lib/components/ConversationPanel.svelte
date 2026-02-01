@@ -63,7 +63,7 @@
 					: 'text-gray-600 hover:text-gray-800'
 			}`}
 		>
-			<span>🤖 AI 답변</span>
+			<span>👨‍🏫 AI 선생님</span>
 			<span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{assistantCount}</span>
 		</button>
 		<button
@@ -90,7 +90,7 @@
 					{:else if activeTab === 'user'}
 						<span class="block text-sm">아직 음성 메시지가 없습니다</span>
 					{:else if activeTab === 'assistant'}
-						<span class="block text-sm">아직 AI 응답이 없습니다</span>
+						<span class="block text-sm">아직 AI 선생님 응답이 없습니다</span>
 					{:else}
 						<span class="block text-sm">시스템 메시지가 없습니다</span>
 					{/if}
@@ -109,20 +109,30 @@
 					</div>
 				{:else if msg.role === 'user'}
 					<!-- User Voice Message -->
-					<div class="flex justify-end">
-						<div class="max-w-sm px-4 py-3 rounded-lg bg-blue-500 text-white rounded-br-none">
-							<p class="text-xs font-medium opacity-90">🎤 당신의 음성</p>
-							<p class="text-sm whitespace-pre-wrap mt-2">{msg.content}</p>
-							<p class="text-xs opacity-70 mt-2 text-right">{msg.timestamp}</p>
+					<div class="flex items-start gap-3">
+						<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-1">
+							<span class="text-white text-xs font-bold">나</span>
+						</div>
+						<div class="flex-1 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
+							<div class="flex items-center justify-between mb-2">
+								<p class="text-xs font-medium text-gray-700">나</p>
+								<p class="text-xs text-gray-600 font-bold">{msg.timestamp}</p>
+							</div>
+							<p class="text-sm text-gray-800 whitespace-pre-wrap">{msg.content}</p>
 						</div>
 					</div>
 				{:else if msg.role === 'assistant'}
 					<!-- Assistant Message -->
-					<div class="flex justify-start">
-						<div class="max-w-sm px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-bl-none">
-							<p class="text-xs font-medium text-indigo-600">🤖 AI 답변</p>
-							<p class="text-sm whitespace-pre-wrap mt-2">{msg.content}</p>
-							<p class="text-xs opacity-60 mt-2">{msg.timestamp}</p>
+					<div class="flex items-start gap-3">
+						<div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+							<span class="text-white text-xs font-bold">AI</span>
+						</div>
+						<div class="flex-1 px-4 py-3 rounded-lg bg-green-50 border border-green-200">
+							<div class="flex items-center justify-between mb-2">
+								<p class="text-xs font-medium text-green-700">AI 선생님</p>
+								<p class="text-xs text-gray-600 font-bold">{msg.timestamp}</p>
+							</div>
+							<p class="text-sm text-gray-800 whitespace-pre-wrap">{msg.content}</p>
 						</div>
 					</div>
 				{/if}
@@ -131,11 +141,13 @@
 
 		<!-- Live Processing Indicator -->
 		{#if isProcessing && assistantMessage && (activeTab === 'all' || activeTab === 'assistant')}
-			<div class="flex justify-start animate-pulse">
-				<div class="max-w-sm px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-900 rounded-bl-none">
-					<p class="text-xs font-medium text-green-600">🤖 AI 답변 (진행중...)</p>
-					<p class="text-sm whitespace-pre-wrap mt-2">{assistantMessage}</p>
-					<p class="text-xs opacity-60 mt-2">응답 생성 중...</p>
+			<div class="flex items-start gap-3 animate-pulse">
+				<div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+					<span class="text-white text-xs font-bold">AI</span>
+				</div>
+				<div class="flex-1 px-4 py-3 rounded-lg bg-green-50 border border-green-300">
+					<p class="text-xs font-medium text-green-700 mb-2">AI 선생님 (응답 중...)</p>
+					<p class="text-sm text-gray-800 whitespace-pre-wrap">{assistantMessage}</p>
 				</div>
 			</div>
 		{/if}

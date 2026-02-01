@@ -7,7 +7,7 @@
 
 import { logDebug } from '$lib/stores/debug.js';
 
-export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange } = {}) {
+export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange, getPromptOptions } = {}) {
   let sessionId = `session-${Date.now()}`;
   let currentAudio = null;
   let activeRequest = null; // 진행 중인 fetch 추적
@@ -57,6 +57,14 @@ export function useRealtimeAgent({ onAudioChunk, onTextChunk, onStateChange } = 
       if (options.sessionTitle) formData.append('sessionTitle', options.sessionTitle);
       if (options.duration !== undefined) formData.append('duration', String(options.duration));
       if (options.clientCreatedAt) formData.append('clientCreatedAt', options.clientCreatedAt);
+      
+      // 프롬프트 설정 전달
+      if (getPromptOptions) {
+        const currentPromptOptions = getPromptOptions();
+        if (currentPromptOptions) {
+          formData.append('promptOptions', JSON.stringify(currentPromptOptions));
+        }
+      }
 
       logDebug('realtime', 'POST /api/realtime');
       

@@ -21,6 +21,7 @@ export function useRecording() {
 		if (!navigator?.mediaDevices?.getUserMedia) {
 			throw new Error('This browser does not support audio recording');
 		}
+		let bMicAccess = false;
 		try {
 			// Try Permissions API (not available in all browsers)
 			if (navigator.permissions && navigator.permissions.query) {
@@ -33,10 +34,20 @@ export function useRecording() {
 			if (!mediaStream || !mediaStream.active) {
 				mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			}
-			return true;
+			//return true;
+			bMicAccess
 		} catch (err) {
-			throw err;
+			console.error('Microphone access error:', err);
+			bMicAccess = false;
+		} finally {
+			logDebug('recording', 'requestMicAccess', {
+				active: mediaStream?.active || false,
+				tracks: mediaStream?.getAudioTracks()?.length || 0
+			});
+			bMicAccess = mediaStream?.active || false;
 		}
+		return bMicAccess;
+		
 	}
 
 	async function startRecording(onStateUpdate) {

@@ -2,7 +2,7 @@ import { OpenAI } from 'openai';
 import { json, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
-import { englishConversationPrompt } from '$lib/prompts/englishConversationTutor.js';
+import { englishConversationPrompt, buildConversationPrompt } from '$lib/prompts/englishConversationTutor.js';
 import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
@@ -18,6 +18,7 @@ const conversationStore = new Map();
  * Request:
  * - Form data with 'audio' field
  * - Optional 'sessionId' to maintain conversation context
+ * - Optional 'promptOptions' for customizing the AI behavior
  * 
  * Response:
  * - JSON with transcription, AI response text, and audio URL
@@ -36,6 +37,17 @@ export async function POST({ request }) {
     const sessionId = form.get('sessionId') || `session-${Date.now()}`;
     const sessionTitle = form.get('sessionTitle');
     const duration = Number(form.get('duration') || 0);
+    
+    // 프롬프트 옵션 추출
+    const promptOptionsStr = form.get('promptOptions');
+    let promptOptions = null;
+    if (promptOptionsStr) {
+      try {
+        promptOptions = JSON.parse(promptOptionsStr);
+      } catch (err) {
+        console.warn('Failed to parse promptOptions:', err);
+      }
+    }
 
     if (!audioFile || !(audioFile instanceof File)) {
       return error(400, { message: 'No audio file provided' });
@@ -55,8 +67,13 @@ export async function POST({ request }) {
 
     // 4️⃣ Get or create conversation history
     if (!conversationStore.has(sessionId)) {
+      // 프롬프트 옵션이 있으면 커스텀 프롬프트 생성, 없으면 기본 프롬프트 사용
+      const systemPrompt = promptOptions 
+        ? buildConversationPrompt(promptOptions)
+        : englishConversationPrompt;
+        
       conversationStore.set(sessionId, [
-        { role: 'system', content: englishConversationPrompt }
+        { role: 'system', content: systemPrompt }
       ]);
     }
     const messages = conversationStore.get(sessionId);
@@ -114,7 +131,8 @@ export async function POST({ request }) {
             title: sessionTitle || null,
             user_message: userText,
             assistant_message: assistantText,
-            duration: Number.isFinite(duration) ? duration : 0
+            duration: Number.isFinite(duration) ? duration : 0,
+            prompt_settings: promptOptions || null  // 프롬프트 설정 저장
           };
 
           const { error: insertError } = await supabase

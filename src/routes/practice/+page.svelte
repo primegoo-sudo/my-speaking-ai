@@ -10,6 +10,7 @@
 	import RecordingPanel from '$lib/components/RecordingPanel.svelte';
 	import ApiStatusPanel from '$lib/components/ApiStatusPanel.svelte';
 	import TipsPanel from '$lib/components/TipsPanel.svelte';
+	import PromptSettings from '$lib/components/PromptSettings.svelte';
 
 	// ====== State ======
 	let recordingTime = 0;
@@ -36,11 +37,22 @@
 		isAnyActivityRunning: false,
 		lastActivityTime: null
 	};
+	
+	// 프롬프트 설정
+	let promptSettings = {
+		role: "친절하고 도움이 되는 다국어 대화 도우미",
+		personality: "따뜻하고, 격려하며, 친근함",
+		responseLength: "2-3 문장",
+		topics: "일상 대화, 취미, 여행, 직장, 음식, 건강, 목표",
+		correctionStyle: "대화 중 자연스럽게 부드럽게 교정",
+		difficulty: "사용자 수준에 맞춰 점진적으로 난이도 조절"
+	};
 
 	const { startRecording, stopRecording, formatTime, cleanup, requestMicAccess } = useRecording();
 	const realtime = useRealtimeAgent({
 		onTextChunk: handleTextChunk,
-		onStateChange: handleStateChange
+		onStateChange: handleStateChange,
+		getPromptOptions: () => promptSettings
 	});
 
 	const formatSessionTitle = (date) =>
@@ -93,7 +105,8 @@
 					title: key,
 					createdAt: row.created_at,
 					lastAt: row.created_at,
-					rows: []
+					rows: [],
+					promptSettings: row.prompt_settings || null  // 프롬프트 설정 저장
 				});
 			}
 			const session = map.get(key);
@@ -361,6 +374,22 @@
 		}];
 		await refreshSessionList();
 	}
+	
+	// 프롬프트 설정 적용 핸들러
+	function handlePromptApply(newSettings) {
+		promptSettings = { ...newSettings };
+		// realtime 에이전트를 새 설정으로 재초기화
+		// 다음 세션부터 새 프롬프트가 적용됨
+		realtime.reset();
+		liveConversationHistory = [
+			...liveConversationHistory,
+			{
+				role: 'system',
+				content: `⚙️ AI 튜터 설정이 적용되었습니다. 다음 대화부터 새 설정이 반영됩니다.`,
+				timestamp: new Date().toLocaleTimeString()
+			}
+		];
+	}
 
 	// ====== Lifecycle ======
 	let statusUpdateInterval;
@@ -394,6 +423,12 @@
 			<h1 class="text-4xl font-bold text-gray-800 mb-2">🎤 AI 대화 연습</h1>
 			<p class="text-gray-600">한글/영어 자유롭게 대화하세요 - OpenAI 음성 AI</p>
 		</div>
+		
+		<!-- Prompt Settings -->
+		<PromptSettings 
+			settings={promptSettings}
+			onApply={handlePromptApply}
+		/>
 
 		<!-- Recording Panel - Control Buttons (먼저 표시) -->
 		<RecordingPanel
@@ -489,6 +524,31 @@
 							</button>
 						</div>
 						<p class="text-xs text-gray-400">해당 세션의 모든 대화 기록이 변경/삭제됩니다.</p>
+						
+						<!-- AI 설정 표시 -->
+						{#if selectedSession.promptSettings}
+							<div class="mt-3 pt-3 border-t border-gray-200">
+								<p class="text-xs font-semibold text-gray-600 mb-2">⚙️ 사용된 AI 설정</p>
+								<div class="grid grid-cols-2 gap-2 text-xs">
+									<div>
+										<span class="text-gray-500">역할:</span>
+										<span class="text-gray-700 ml-1">{selectedSession.promptSettings.role || '-'}</span>
+									</div>
+									<div>
+										<span class="text-gray-500">응답길이:</span>
+										<span class="text-gray-700 ml-1">{selectedSession.promptSettings.responseLength || '-'}</span>
+									</div>
+									<div class="col-span-2">
+										<span class="text-gray-500">성격/톤:</span>
+										<span class="text-gray-700 ml-1">{selectedSession.promptSettings.personality || '-'}</span>
+									</div>
+									<div class="col-span-2">
+										<span class="text-gray-500">교정스타일:</span>
+										<span class="text-gray-700 ml-1">{selectedSession.promptSettings.correctionStyle || '-'}</span>
+									</div>
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			{/if}
